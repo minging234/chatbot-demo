@@ -1,0 +1,7 @@
+*.rsa
+.chatbot
+.env
+.vscode/
+.DS_Store
+__pycache__
+README-backend.md
