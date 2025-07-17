@@ -1,0 +1,15 @@
+
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy[asyncio]
+asyncpg
+redis>=4
+langchain
+langchain-openai
+httpx
+python-dotenv
+tenacity
+pytest
+pytest-asyncio
