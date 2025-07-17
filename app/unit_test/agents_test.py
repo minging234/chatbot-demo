@@ -17,7 +17,7 @@ async def test_reply_returns_parsed_result():
     context = [Mock()]
 
     # Act
-    result = await agent.reply(user_msg, context)
+    result = await agent.reply(user_msg, context) # type: ignore
 
     # Assert
     mock_builder.build.assert_called_once_with(user_msg, context)
