@@ -9,8 +9,8 @@ redis>=4
 langchain
 langchain-openai
 httpx
-python-dotenv
 tenacity
 pytest
 pytest-asyncio
 python-dotenv
+pydantic[email]
