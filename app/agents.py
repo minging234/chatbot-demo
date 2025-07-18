@@ -80,7 +80,7 @@ class AIAgent:
         RuntimeError
             If the model enters an infinite tool-call loop.
         """
-        messages: list[BaseMessage] = [*(history or []), HumanMessage(content=user_msg)]
+        messages: list[BaseMessage] = self._builder.build(user_msg, (history or []))
 
         for _ in range(self._max_loops):
             llm_reply: AIMessage = await self._llm.ainvoke(
@@ -153,9 +153,7 @@ class AIAgent:
             )
 
         try:
-            result = (
-                await tool.arun(args) if tool.is_async else tool.run(args)  # type: ignore[arg-type]
-            )
+            result = await tool.ainvoke(args)
         except Exception as exc:  # noqa: BLE001
             result = f"[error] {type(exc).__name__}: {exc}"
 
@@ -181,7 +179,7 @@ if __name__ == "__main__":
         agent = AIAgent(llm, builder, parser, tools=tools)
 
         # user_msg = "What is the weather in Paris and tell me a joke?"
-        user_msg = "Book a 30-minute call tomorrow at 10 AM with alice@example.com."
+        user_msg = "Book a 30-minute call next Tuesday at 10 AM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
         history = []
 
         reply = await agent.reply(user_msg, history)

@@ -28,17 +28,17 @@ class CreateBookingTool(BaseTool):
     def _run(  # sync wrapper required by BaseTool
         self, payload: Dict[str, Any], run_manager: CallbackManagerForToolRun | None = None
     ) -> Dict[str, Any]:
-        return asyncio.run(self._arun(payload))  # delegate to async version
+        return asyncio.run(self._arun(run_manager=run_manager, **payload))  # delegate to async version
 
     # ------------------------------------------------------------------ #
     # async runner (langchain will call this from .run or .arun)
     # ------------------------------------------------------------------ #
     async def _arun(
-        self,
-        payload: Dict[str, Any],
+        self, 
         run_manager: CallbackManagerForToolRun | None = None,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
-        data = BookingPayload(**payload)   # validates & coerces
+        data = BookingPayload(**kwargs)   # validates & coerces
         return await self._client.create_booking(data)
 
 if __name__ == "__main__":
