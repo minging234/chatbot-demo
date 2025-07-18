@@ -21,7 +21,7 @@ Class
 - Chat Orchestrator (facade class to handle the request)
     variables
     - prompt manager
-    - context manager
+    - context store
     - ai agent
     cuntions
 
@@ -32,7 +32,7 @@ Class
 - Response Parser
     - parsing the response
 
-- context manager
+- context store
     - retrieval chat history according to user info
     - save user input in the db
 
