@@ -2,7 +2,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os, uuid, redis.asyncio as aioredis
 from langchain_openai import ChatOpenAI
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from .prompt_builder import PromptBuilder
 from .response_parser import ResponseParser
 from .agents import AIAgent
@@ -51,8 +51,8 @@ async def lifespan(app):
     finally:
         await redis.close()
 
-async def get_redis(app=Depends()):
-    return app.state.redis           # one connection per worker
+async def get_redis(request: Request) -> Redis:
+    return request.app.state.redis            # already set in lifespan()
 
 async def get_rate_limiter(redis: Redis = Depends(get_redis)):
     return RedisRateLimiter(redis)

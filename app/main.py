@@ -1,7 +1,7 @@
 
 from fastapi import FastAPI, Depends, Header
 from .models import ChatRequest, ChatResponse
-from .di import enforce_rate_limit, orchestrator, conversation_id_header
+from .di import orchestrator, conversation_id_header, enforce_rate_limit, lifespan
 from .orchestrator import ChatOrchestrator
 from dotenv import load_dotenv
 from pathlib import Path
@@ -9,7 +9,7 @@ from pathlib import Path
 # Load .env from the project root directory
 load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(
