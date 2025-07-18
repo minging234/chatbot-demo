@@ -32,6 +32,15 @@ class BookingPayload(BaseModel):
     attendees: List[Attendee] = Field(default_factory=list)
 
 
+class BookingResult(BaseModel):
+    ok: bool                      # True if HTTP 2xx
+    status: int                   # HTTP status code
+    data: Optional[Dict[str, Any]] = None   # successful JSON body
+    error: Optional[str] = None              # short reason
+    raw: Optional[Dict[str, Any]] = None     # full server payload
+
+
+
 class CalComClient:
     """
     Minimal Cal.com v1 client (query-param authentication).
@@ -54,19 +63,41 @@ class CalComClient:
         return f"{self.BASE_URL}{path}", {"apiKey": self.api_key}
 
     # ---------- public method ----------
-    async def create_booking(self, payload: BookingPayload) -> dict:
+    async def create_booking(self, payload: BookingPayload) -> BookingResult:
+        """
+        Make the booking request and *always* return a BookingResult.
+        No exceptions are bubbled up to the caller.
+        """
         url, params = self._url("/bookings")
-        # async with httpx.AsyncClient() as client:
-        #     r = await client.post(url, params=params, json=payload.model_dump())
-        #     r.raise_for_status()
-        #     return r.json()
         async with httpx.AsyncClient() as client:
-            r = await client.post(url, params=params, json=payload.model_dump())
-            if r.status_code >= 400:
-                # Pretty-print Cal.com's explanation before raising
-                try:
-                    pprint.pp(r.json())
-                except Exception:
-                    print(r.text)
-                r.raise_for_status()
-            return r.json()
+            try:
+                resp = await client.post(url, params=params,
+                                          json=payload.model_dump())
+            except httpx.RequestError as exc:
+                # Network / DNS / TLS failure
+                return BookingResult(
+                    ok=False, status=0,
+                    error=f"Network error: {exc}",
+                )
+
+        # ---- We got an HTTP response ----
+        status = resp.status_code
+        try:
+            body = resp.json()
+        except ValueError:
+            body = {"raw_text": resp.text or "<empty>"}
+
+        if 200 <= status < 300:
+            return BookingResult(ok=True, status=status, data=body)
+
+        # Pretty-print once for local debugging (optional)
+        pprint.pprint(body)
+
+        # Build a concise error string
+        error_msg = body.get("message") or body.get("error") or resp.reason_phrase
+        return BookingResult(
+            ok=False,
+            status=status,
+            error=error_msg,
+            raw=body,
+        )
