@@ -14,3 +14,4 @@ pytest
 pytest-asyncio
 python-dotenv
 pydantic[email]
+langchain-community

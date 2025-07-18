@@ -22,7 +22,7 @@ from .prompt_builder import PromptBuilder
 from .response_parser import ResponseParser
 import sys
 import asyncio
-from langchain_openai import ChatOpenAI
+from app.utils import to_openai_function_dict
 
 
 class AIAgent:
@@ -80,6 +80,8 @@ class AIAgent:
             If the model enters an infinite tool-call loop.
         """
         messages: list[BaseMessage] = self._builder.build(user_msg, (history or []))
+        print(messages, len(messages))
+        print(history, len(history) if history else 0)
 
         for _ in range(self._max_loops):
             llm_reply: AIMessage = await self._llm.ainvoke(
@@ -142,6 +144,7 @@ class AIAgent:
     # helpers
     # --------------------------------------------------------------------- #
     async def _run_tool(self, name: str, args: dict, call_id: str) -> ToolMessage:
+        print("run booking tool")
         print(name, call_id, args, self._tool_map.get(name))
         """Locate the tool, execute it, wrap result as a ToolMessage."""
         tool = self._tool_map.get(name)
@@ -161,7 +164,6 @@ class AIAgent:
 if __name__ == "__main__":
     from .tools import CreateBookingTool  # assumes you have a 'tools' list in tools.py
     from app.cal_client import CalComClient
-    from app.utils import to_openai_function_dict
 
     # Initialize the CalComClient (provide any required arguments)
     client = CalComClient()
@@ -178,7 +180,7 @@ if __name__ == "__main__":
         agent = AIAgent(llm, builder, parser, tools=tools)
 
         # user_msg = "What is the weather in Paris and tell me a joke?"
-        user_msg = "Book a 30-minute call next Tuesday at 10 AM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
+        user_msg = "Book a 30-minute call next Tuesday at 1 PM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
         history = []
 
         reply = await agent.reply(user_msg, history)

@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 import os, uuid, redis.asyncio as aioredis
 from langchain_openai import ChatOpenAI
 from fastapi import Depends, Header, Request
+
+from app.cal_client import CalComClient
+from app.tools import CreateBookingTool
 from .prompt_builder import PromptBuilder
 from .response_parser import ResponseParser
 from .agents import AIAgent
@@ -12,6 +15,7 @@ from .rate_limiter import RedisRateLimiter
 from contextlib import asynccontextmanager
 from redis.asyncio import Redis
 from fastapi import Depends, HTTPException
+
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -30,7 +34,13 @@ def ai_agent(
     builder: PromptBuilder = Depends(prompt_builder),
     parser: ResponseParser = Depends(response_parser)
 ) -> AIAgent:
-    return AIAgent(ChatOpenAI(model="gpt-4o-mini"), builder, parser)
+    # Initialize the CalComClient (provide any required arguments)
+    client = CalComClient()
+
+    # Create an instance of the tool
+    create_booking_tool = CreateBookingTool(client=client)
+    tools = [create_booking_tool]
+    return AIAgent(ChatOpenAI(model="gpt-4o-mini"), builder, parser, tools=tools)
 
 def orchestrator(
     agent: AIAgent = Depends(ai_agent)
@@ -39,8 +49,13 @@ def orchestrator(
     store = RedisContextStore(redis)
     return ChatOrchestrator(agent, store)
 
-def conversation_id_header(x_conversation_id: str | None = Header(None)):
-    return x_conversation_id or str(uuid.uuid4())
+def conversation_id_header(
+    conversation_id: str | None = Header(
+        default=None,
+        alias="conversation-id",   # 👈 match exactly what the client sends
+    )
+):
+    return conversation_id or str(uuid.uuid4())
 
 @asynccontextmanager
 async def lifespan(app):
