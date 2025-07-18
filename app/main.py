@@ -47,12 +47,12 @@ if __name__ == "__main__":
 
     payload = {
         "message": (
-            # "confirmed, help me book it"
+            "confirmed, help me book it"
             # "can you help book a time at 1pm pst tomorrow"
-            "help me book a meeting next monday at 10 am with Grace"
-            "her email grace2@example.com, my name is jimmy, email is minging234@gmail.com, use default for all the others. can you help with that?"
-            "Oh, her email grace2@example.com, my name is jimmy, email is "
-            "minging234@gmail.com, use default for all the others. can you help with that?"
+            # "help me book a meeting next monday 07/21 at 10 am with Grace"
+            # "her email grace2@example.com use default for all the others. can you help with that?"
+            # "Oh, her email grace2@example.com, my name is jimmy, email is "
+            # "minging234@gmail.com, use default for all the others. can you help with that?"
         ),
         "email": "test@example.com",
     }

@@ -82,6 +82,7 @@ class AIAgent:
         messages: list[BaseMessage] = self._builder.build(user_msg, (history or []))
         print(messages, len(messages))
         print(history, len(history) if history else 0)
+        print(self._tool_map)
 
         for _ in range(self._max_loops):
             llm_reply: AIMessage = await self._llm.ainvoke(

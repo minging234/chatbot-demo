@@ -40,7 +40,7 @@ def ai_agent(
     # Create an instance of the tool
     create_booking_tool = CreateBookingTool(client=client)
     tools = [create_booking_tool]
-    return AIAgent(ChatOpenAI(model="gpt-4o-mini"), builder, parser, tools=tools)
+    return AIAgent(ChatOpenAI(model="gpt-3.5-turbo", temperature=0), builder, parser, tools=tools)
 
 def orchestrator(
     agent: AIAgent = Depends(ai_agent)
