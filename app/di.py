@@ -8,6 +8,10 @@ from .response_parser import ResponseParser
 from .agents import AIAgent
 from .context_store import RedisContextStore
 from .orchestrator import ChatOrchestrator
+from .rate_limiter import RedisRateLimiter
+from contextlib import asynccontextmanager
+from redis.asyncio import Redis
+from fastapi import Depends, HTTPException
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -37,3 +41,25 @@ def orchestrator(
 
 def conversation_id_header(x_conversation_id: str | None = Header(None)):
     return x_conversation_id or str(uuid.uuid4())
+
+@asynccontextmanager
+async def lifespan(app):
+    redis = Redis.from_url("redis://localhost:6379/0")
+    app.state.redis = redis
+    try:
+        yield
+    finally:
+        await redis.close()
+
+async def get_redis(app=Depends()):
+    return app.state.redis           # one connection per worker
+
+async def get_rate_limiter(redis: Redis = Depends(get_redis)):
+    return RedisRateLimiter(redis)
+
+async def enforce_rate_limit(
+    cid: str = Depends(conversation_id_header),
+    limiter: RedisRateLimiter = Depends(get_rate_limiter),
+):
+    if not await limiter.allow(cid):
+        raise HTTPException(429, "Rate limit exceeded")

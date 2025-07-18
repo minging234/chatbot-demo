@@ -45,7 +45,6 @@ class AIAgent:
         builder: PromptBuilder,
         parser: ResponseParser,
         tools: Sequence[BaseTool] | None = None,
-        *,
         max_loops: int = 3,
     ) -> None:
         self._llm = llm
