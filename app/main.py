@@ -53,7 +53,7 @@ if __name__ == "__main__":
             # "for the response, her name is Alice and email alice@example.com use default for all the others. can you help with that?"
             # "Oh, her email grace2@example.com, my name is jimmy, email is "
             # "minging234@gmail.com, use default for all the others. can you help with that?"
-            "List all the upcoming meeting with Alice, here email is alice@example.com"
+            "List all the upcoming meeting with Alice, her email is alice@example.com"
         ),
         "email": "test@example.com",
     }
