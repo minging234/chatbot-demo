@@ -8,9 +8,20 @@ from langchain_core.messages import (
 
 
 def to_openai_function_dict(tool: BaseTool) -> Dict[str, Any]:
-    """Return the exact dict Chat Completions expects."""
-    # Pydantic v2: `schema()` is deprecated; use model_json_schema()
-    schema = tool.args_schema.model_json_schema()
+    """
+    Build the dict that Chat Completions expects for a single function/tool,
+    working with either Pydantic v1 or v2 and tolerating tools that have no
+    input schema.
+    """
+    if not getattr(tool, "args_schema", None):
+        schema: Dict[str, Any] = {"type": "object", "properties": {}}
+    else:
+        schema = (
+            tool.args_schema.model_json_schema()             # Pydantic ≥ 2.0
+            if hasattr(tool.args_schema, "model_json_schema")
+            else tool.args_schema.schema()                   # Pydantic 1.x
+        )
+
     return {
         "type": "function",
         "function": {
@@ -19,7 +30,6 @@ def to_openai_function_dict(tool: BaseTool) -> Dict[str, Any]:
             "parameters":  schema,
         },
     }
-
 
 def extract_tool_name(call: dict) -> tuple[str, dict, str]:
     """

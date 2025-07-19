@@ -112,17 +112,58 @@ class CalComClient:
             error=error_msg,
             raw=body,
         )
+    
+    # ---------- new: cancel one booking ----------
+    async def cancel_booking(
+        self,
+        booking_uid: str,
+        cancellation_reason: str | None = None,
+        all_remaining_bookings: bool = False,
+    ) -> dict:
+        """
+        Cancel a single Cal.com booking (or an entire series if
+        ``all_remaining_bookings`` is True).
+        """
+        url, _ = self._url(f"/bookings/{booking_uid}/cancel", use_v2=True)
+        headers = self._auth_headers()
+        body: dict[str, Any] = {}
+        if cancellation_reason is not None:
+            body["cancellationReason"] = cancellation_reason
+        if all_remaining_bookings:
+            body["allRemainingBookings"] = True
+
+        async with httpx.AsyncClient() as client:
+            r = await client.post(url, json=body, headers=headers)
+            if r.status_code >= 400:
+                try:
+                    pprint.pp(r.json())
+                except Exception:
+                    print(r.text)
+                r.raise_for_status()
+            return r.json()
+        
 
     # ─────────────────────────────────────────────────────────────
     # NEW: fetch existing bookings for a given invitee e-mail
     # ─────────────────────────────────────────────────────────────
-    async def list_bookings(self, attendee_email: str) -> BookingResult:
+    async def list_bookings(
+        self,
+        email: str,
+        after_start: str | None = None,
+        before_end: str | None = None,
+        status: str = "upcoming",
+    ) -> BookingResult:
         """
-        Return every booking whose *invitee* matches `attendee_email`.
+        Return every booking whose *invitee* matches `email`, optionally filtered by start/end and status.
         """
         url, params = self._url("/bookings", use_v2=True)
-        params["attendeeEmail"] = attendee_email
-        params["status"] = "upcoming"
+        params["attendeeEmail"] = email
+        if not status:
+            params["status"] = "upcoming"
+        if after_start:
+            params["afterStart"] = after_start
+        if before_end:
+            params["beforeEnd"] = before_end
         headers = self._auth_headers()
 
         async with httpx.AsyncClient() as client:
@@ -132,15 +173,26 @@ class CalComClient:
                 return BookingResult(ok=False, status=0,
                                       error=f"Network error: {exc}")
 
-        status = resp.status_code
+        status_code = resp.status_code
         try:
             body = resp.json()
         except ValueError:
             body = {"raw_text": resp.text or ""}
 
-        if 200 <= status < 300:
-            return BookingResult(ok=True, status=status, data=body)
+        if 200 <= status_code < 300:
+            return BookingResult(ok=True, status=status_code, data=body)
 
-        error_msg = body.get("message") or body.get("error") or resp.reason_phrase
-        return BookingResult(ok=False, status=status,
-                             error=error_msg, raw=body)
+        error_msg = (
+            body.get("message")          # may be list/dict in v2
+            or body.get("error")
+            or resp.reason_phrase
+        )
+        if not isinstance(error_msg, str):
+            error_msg = str(error_msg)   # ensure it’s always a str
+
+        return BookingResult(
+            ok=False,
+            status=status_code,
+            error=error_msg,
+            raw=body,
+        )

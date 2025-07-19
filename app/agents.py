@@ -6,7 +6,7 @@ from typing import List, Sequence
 
 from langchain_openai import ChatOpenAI
 
-from app.tools import ListBookingsTool
+from app.tools import CancelBookingTool, ListBookingsTool
 from app.utils import all_errors, extract_tool_name
 
 
@@ -146,7 +146,7 @@ class AIAgent:
     # helpers
     # --------------------------------------------------------------------- #
     async def _run_tool(self, name: str, args: dict, call_id: str) -> ToolMessage:
-        print("run booking tool")
+        print("running tool")
         print(name, call_id, args, self._tool_map.get(name))
         """Locate the tool, execute it, wrap result as a ToolMessage."""
         tool = self._tool_map.get(name)
@@ -173,7 +173,8 @@ if __name__ == "__main__":
     # Create an instance of the tool
     create_booking_tool = CreateBookingTool(client=client)
     list_booking_tool = ListBookingsTool(client=client)
-    tools = [create_booking_tool, list_booking_tool]
+    cancel_booking_tool = CancelBookingTool(client=client)
+    tools = [create_booking_tool, list_booking_tool, cancel_booking_tool]
 
 
     async def main():
@@ -184,7 +185,8 @@ if __name__ == "__main__":
 
         # user_msg = "What is the weather in Paris and tell me a joke?"
         # user_msg = "Book a 30-minute call next Tuesday at 1 PM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
-        user_msg = "forgot all the previous context, List all the upcoming meeting with Alice, here email is alice@example.com"
+        # user_msg = "forgot all the previous context, List all the upcoming meeting with Alice, here email is alice@example.com"
+        user_msg = "help me cancel the meeting for next Monday, July 21, 2025, at 10:00 AM PST with Alice (alice@example.com)"
         history = []
 
         reply = await agent.reply(user_msg, history)

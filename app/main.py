@@ -49,7 +49,7 @@ if __name__ == "__main__":
         "message": (
             # "confirmed, help me book it"
             # "can you help book another time at 10am pst next monday?"
-            # "help me book a meeting next monday 07/21 at 10 am with Grace"
+            # "help me book a meeting next monday 07/21 at 10 am with alice"
             # "for the response, her name is Alice and email alice@example.com use default for all the others. can you help with that?"
             # "Oh, her email grace2@example.com, my name is jimmy, email is "
             # "minging234@gmail.com, use default for all the others. can you help with that?"
