@@ -1,4 +1,4 @@
-# Chatbot Demo (FastAPI + LangChain + Redis + Postgres)
+# Chatbot Demo (FastAPI + LangChain + Redis + Streamlit)
 
 Run locally:
 
