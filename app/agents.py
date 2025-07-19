@@ -6,7 +6,7 @@ from typing import List, Sequence
 
 from langchain_openai import ChatOpenAI
 
-from app.tools import CancelBookingTool, ListBookingsTool
+from app.tools import CancelBookingTool, ListBookingsTool, RescheduleBookingTool
 from app.utils import all_errors, extract_tool_name
 
 
@@ -174,7 +174,8 @@ if __name__ == "__main__":
     create_booking_tool = CreateBookingTool(client=client)
     list_booking_tool = ListBookingsTool(client=client)
     cancel_booking_tool = CancelBookingTool(client=client)
-    tools = [create_booking_tool, list_booking_tool, cancel_booking_tool]
+    reschedule_tool = RescheduleBookingTool(client=client)
+    tools = [create_booking_tool, list_booking_tool, cancel_booking_tool, reschedule_tool]
 
 
     async def main():
@@ -186,7 +187,7 @@ if __name__ == "__main__":
         # user_msg = "What is the weather in Paris and tell me a joke?"
         # user_msg = "Book a 30-minute call next Tuesday at 1 PM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
         # user_msg = "forgot all the previous context, List all the upcoming meeting with Alice, here email is alice@example.com"
-        user_msg = "help me cancel the meeting for next Monday, July 21, 2025, at 10:00 AM PST with Alice (alice@example.com)"
+        user_msg = "help me reschedule the meeting for next Monday, 21 Jul 1:00pm - 1:30pm with Grace (grace2@example.com) to the same day 3:00pm - 3:30pm"
         history = []
 
         reply = await agent.reply(user_msg, history)

@@ -1,10 +1,10 @@
 from langchain.tools import BaseTool
 from langchain.callbacks.manager import CallbackManagerForToolRun
-from typing import Any, ClassVar, Dict, Optional, Type
+from typing import Any, ClassVar, Dict, List, Optional, Type
 
-from pydantic import BaseModel, PrivateAttr
+from pydantic import BaseModel, Field, PrivateAttr
 
-from .cal_client import CalComClient, BookingPayload
+from .cal_client import Attendee, CalComClient, BookingPayload, Responses
 from .cal_client import CalComClient
 import asyncio
 
@@ -139,6 +139,68 @@ class CancelBookingTool(BaseTool):
         )
 
 
+class RescheduleBookingTool(BaseTool):
+    """
+    Reschedules a Cal.com booking:
+      1. cancel the existing meeting (by `booking_uid`)
+      2. immediately create a new one (`new_*` fields)
+    """
+    name: str = "reschedule_booking"
+    description: str = (
+        "Reschedules a Cal.com booking. "
+        "Input must include `booking_uid` of the meeting to move plus the "
+        "new start/end/time-zone details.  Remaining fields follow the "
+        "`BookingPayload` schema."
+    )
+
+    _client: CalComClient = PrivateAttr()
+
+    # ---------- input schema ----------
+    class Args(BaseModel):
+        # which meeting to move
+        booking_uid: str
+
+        # new schedule
+        new_start: str
+        new_end:   str
+        timeZone: str = "Europe/London"
+
+        # full re-booking payload bits
+        eventTypeId: int = 17
+        title: str = "Rescheduled Meeting"
+        responses: Responses
+        language: str = "en"
+        metadata: Dict = Field(default_factory=dict)
+        description: str | None = ""
+        attendees: List[Attendee] = Field(default_factory=list)
+
+    args_schema: ClassVar[Type[BaseModel]] = Args
+
+    # ---------- ctor ----------
+    def __init__(self, client: CalComClient, **data):
+        super().__init__(**data)
+        self._client = client
+
+    # ---------- sync wrapper ----------
+    def _run(self, payload: Dict[str, Any], run_manager: CallbackManagerForToolRun | None = None):
+        return asyncio.run(self._arun(**payload))
+
+    # ---------- async implementation ----------
+    async def _arun(self, **kwargs):
+        booking_uid = kwargs.pop("booking_uid")
+
+        # splice new start/end into a proper BookingPayload
+        payload_dict = {
+            **kwargs,
+            "start": kwargs.pop("new_start"),
+            "end":   kwargs.pop("new_end"),
+        }
+        booking_payload = BookingPayload(**payload_dict)
+
+        result = await self._client.reschedule_booking(booking_uid, booking_payload)
+        return result.model_dump()
+
+
 if __name__ == "__main__":
     # Import necessary classes
 
@@ -182,7 +244,7 @@ if __name__ == "__main__":
     # Example email to query schedules
     # email = "grace2@example.com"
     email = "alice@example.com"
-    payload = {'attendeeEmail': email, 'afterStart': '2025-07-21T17:00:00Z', 'beforeEnd': '2025-07-21T19:00:00Z'} 
+    payload = {'attendeeEmail': email, 'afterStart': '2025-07-21T17:00:00Z'} 
 
     # Synchronous call to list schedules
     schedule_result = query_schedule_tool._run(payload)
@@ -192,12 +254,40 @@ if __name__ == "__main__":
 
     # -----------------------------------
 
-    cancel_meeting_tool = CancelBookingTool(client=client)
+    # cancel_meeting_tool = CancelBookingTool(client=client)
 
-    # Example email to query schedules
-    # email = "grace2@example.com"
-    email = "alice@example.com"
+    # # Example email to query schedules
+    # # email = "grace2@example.com"
+    # email = "alice@example.com"
 
-    # Synchronous call to list schedules
-    cancel_result = cancel_meeting_tool._run({"booking_uid": 'bXAGaUL4sbrEfQQ6gatkBC', "cancellation_reason": "test"})
-    print(cancel_result)
+    # # Synchronous call to list schedules
+    # cancel_result = cancel_meeting_tool._run({"booking_uid": 'bXAGaUL4sbrEfQQ6gatkBC', "cancellation_reason": "test"})
+    # print(cancel_result)
+
+
+    # -----------------------------------
+    # Example usage of RescheduleBookingTool
+    reschedule_tool = RescheduleBookingTool(client=client)
+
+    # Example payload for rescheduling
+    reschedule_payload = {
+        "booking_uid": "dakwUd6WetesebP752dNZR",
+        "new_start": "2025-07-22T16:00:00.000Z",
+        "new_end": "2025-07-22T16:30:00.000Z",
+        "timeZone": "America/Los_Angeles",
+        "eventTypeId": 2874092,
+        "title": "Rescheduled Intro Call",
+        "responses": {
+            "name": "Alice Example",
+            "email": "alice@example.com",
+            "location": {"value": "userPhone", "optionValue": ""}
+        },
+        "language": "en",
+        "metadata": {},
+        "description": "Rescheduling meeting",
+        "attendees": []
+    }
+
+    # Synchronous call to reschedule a booking
+    reschedule_result = reschedule_tool._run(reschedule_payload)
+    print(reschedule_result)

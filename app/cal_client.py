@@ -196,3 +196,36 @@ class CalComClient:
             error=error_msg,
             raw=body,
         )
+    
+    # ────────────────────────────────────────────────────────────────
+    #  PUBLIC ▸ reschedule = cancel ➊ then create ➋
+    # ────────────────────────────────────────────────────────────────
+    async def reschedule_booking(
+        self,
+        old_booking_uid: str,
+        new_payload: BookingPayload,
+        *,
+        cancellation_reason: str | None = "Rescheduled via API",
+        all_remaining_bookings: bool = False,
+    ) -> BookingResult:
+        """
+        Finds an existing booking by UID, cancels it, then creates a new one
+        with ``new_payload``.  Returns the *new* BookingResult (so callers
+        only have to inspect one object).
+        """
+        # ➊ cancel
+        cancel_raw = await self.cancel_booking(
+            old_booking_uid,
+            cancellation_reason=cancellation_reason,
+            all_remaining_bookings=all_remaining_bookings,
+        )
+        if cancel_raw.get("status") != "success":          # Cal v2 shape
+            return BookingResult(
+                ok=False,
+                status=400,
+                error=f"Cancellation failed: {cancel_raw}",
+                raw=cancel_raw,
+            )
+
+        # ➋ create
+        return await self.create_booking(new_payload)
