@@ -34,8 +34,27 @@ class RedisContextStore:
         )
 
     async def save(self, cid: str, messages: List[BaseMessage]):
-        data = json.dumps(messages_to_dict(messages))
-        await self.redis.set(cid, data, ex=self.ttl)
+        """Append *new_messages* to any history already in Redis."""
+        # print("--------------------------------")
+        # print(" save message")
+        # print(cid, messages)
+
+        # print("--------------------------------")
+        # 1️⃣  Get what’s already there
+        existing = await self.redis.get(cid)
+        if existing:
+            history = messages_from_dict(json.loads(existing))
+        else:
+            history = []
+
+        # 2️⃣  Extend and persist
+        combined = history + messages
+        await self.redis.set(
+            cid,
+            json.dumps(messages_to_dict(combined)),
+            ex=self.ttl,           # refresh TTL on every write
+        )
+
 
     async def load(self, cid: str) -> List[BaseMessage]:
         data = await self.redis.get(cid)
@@ -63,12 +82,21 @@ if __name__ == "__main__":
         # Save messages
         await store.save(cid, messages)
 
+        messages = [
+            HumanMessage(content="Hello!"),
+            AIMessage(content="Hi, how can I help you?")
+        ]
+
+        # Save messages
+        await store.save(cid, messages)
+
         # Load messages
         loaded = await store.load(cid)
         print("Loaded messages:", loaded)
 
         # Cleanup
         await redis.delete(cid)
-        await redis.close()
+        await redis.aclose()
 
     asyncio.run(main())
+

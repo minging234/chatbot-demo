@@ -5,6 +5,13 @@ from langchain_core.messages import ToolMessage
 from langchain_core.messages import (
     ToolMessage,
 )
+from zoneinfo import ZoneInfo
+from datetime import datetime
+import re, json
+import tiktoken
+from typing import List
+from langchain_core.messages import BaseMessage
+
 
 
 def to_openai_function_dict(tool: BaseTool) -> Dict[str, Any]:
@@ -49,3 +56,50 @@ def extract_tool_name(call: dict) -> tuple[str, dict, str]:
 def all_errors(msgs: list[ToolMessage]) -> bool:
     """True if every ToolMessage content starts with '[error]'."""
     return bool(msgs) and all(m.content.lstrip().startswith("[error]") for m in msgs)
+
+LOCAL_TZ = ZoneInfo("America/Los_Angeles")
+
+ISO_UTC_RE = re.compile(r'"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)"')
+
+def utc_to_pt(iso_utc: str) -> str:
+    dt = datetime.fromisoformat(iso_utc.replace("Z", "+00:00"))
+    return dt.astimezone(LOCAL_TZ).strftime("%Y-%m-%d %I:%M %p PT")
+
+def rewrite_times_for_human(text: str) -> str:
+    # Replace every ISO-UTC timestamp inside a JSON blob that you plan to
+    # show to the user. Tools still receive the original JSON.
+    return ISO_UTC_RE.sub(lambda m: f'"{utc_to_pt(m.group(1))}"', text)
+
+
+ENC = tiktoken.encoding_for_model("gpt-3.5-turbo")   # or your model
+
+def num_tokens(msg: BaseMessage) -> int:
+    return len(ENC.encode(msg.content))
+
+def prune_history(
+    messages: List[BaseMessage],
+    max_tokens: int = 12_000,        # leave ~4k headroom for the reply/tools
+) -> List[BaseMessage]:
+    """
+    Keep the system prompt + *most recent* messages that fit into `max_tokens`.
+    Tool / function results are truncated to reduce bulk.
+    """
+    # 1️⃣  Always keep the very first message (system)
+    pruned: List[BaseMessage] = [messages[0]]
+    running_total = num_tokens(messages[0])
+
+    # 2️⃣  Walk the list from the *end* (newest) backwards
+    for msg in reversed(messages[1:]):
+        # --- compress huge tool messages ----------------------------------
+        if hasattr(msg, "tool_call_id") and len(msg.content) > 200:
+            msg = msg.__class__(
+                tool_call_id=getattr(msg, "tool_call_id"),
+                content="[tool-result truncated]",
+            )
+        t = num_tokens(msg)
+        if running_total + t > max_tokens:
+            break
+        pruned.insert(1, msg)        # insert after system
+        running_total += t
+
+    return pruned

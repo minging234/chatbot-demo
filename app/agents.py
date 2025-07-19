@@ -7,7 +7,7 @@ from typing import List, Sequence
 from langchain_openai import ChatOpenAI
 
 from app.tools import CancelBookingTool, ListBookingsTool, RescheduleBookingTool
-from app.utils import all_errors, extract_tool_name
+from app.utils import all_errors, extract_tool_name, prune_history, rewrite_times_for_human
 
 
 from langchain_core.messages import (
@@ -82,10 +82,11 @@ class AIAgent:
         """
         messages: list[BaseMessage] = self._builder.build(user_msg, (history or []))
         print(messages, len(messages))
-        print(history, len(history) if history else 0)
+        print("history", history, len(history) if history else 0)
         print(self._tool_map)
 
         for _ in range(self._max_loops):
+            messages = prune_history(messages)
             llm_reply: AIMessage = await self._llm.ainvoke(
                 messages,
                 tools=list(to_openai_function_dict(t) for t in self._tool_map.values()),
@@ -97,6 +98,7 @@ class AIAgent:
             
 
             if not tool_calls:  # ✅ no function call -- we're done
+                llm_reply.content = rewrite_times_for_human(llm_reply.content)
                 return llm_reply.content
 
             # ----------------------------------------------------------------
