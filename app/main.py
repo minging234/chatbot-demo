@@ -47,12 +47,13 @@ if __name__ == "__main__":
 
     payload = {
         "message": (
-            "confirmed, help me book it"
-            # "can you help book a time at 1pm pst tomorrow"
+            # "confirmed, help me book it"
+            # "can you help book another time at 10am pst next monday?"
             # "help me book a meeting next monday 07/21 at 10 am with Grace"
-            # "her email grace2@example.com use default for all the others. can you help with that?"
+            # "for the response, her name is Alice and email alice@example.com use default for all the others. can you help with that?"
             # "Oh, her email grace2@example.com, my name is jimmy, email is "
             # "minging234@gmail.com, use default for all the others. can you help with that?"
+            "List all the upcoming meeting with Alice, here email is alice@example.com"
         ),
         "email": "test@example.com",
     }
@@ -63,6 +64,6 @@ if __name__ == "__main__":
     }
 
     response = requests.post(API_URL, json=payload, headers=headers, timeout=10)
-
+    print(payload["message"])
     print("Status code:", response.status_code)
     print("Response JSON:", response.json())

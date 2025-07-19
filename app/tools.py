@@ -39,7 +39,34 @@ class CreateBookingTool(BaseTool):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         data = BookingPayload(**kwargs)   # validates & coerces
-        return await self._client.create_booking(data)
+        return await self._client.create_booking(data) # type: ignore
+
+
+class ListBookingsArgs(BaseModel):
+    email: str
+
+class ListBookingsTool(BaseTool):
+    name: str = "list_bookings"
+    description: str = (
+        "Returns every scheduled Cal.com event where the invitee’s e-mail "
+        "matches the given address."
+    )
+    _client: CalComClient = PrivateAttr()
+    args_schema: ClassVar[Type[BaseModel]] = ListBookingsArgs
+
+    def __init__(self, client: CalComClient, **data: Any) -> None:
+        super().__init__(**data)
+        self._client = client
+
+    # sync wrapper required by BaseTool
+    def _run(self, payload: Dict[str, Any],
+             run_manager: CallbackManagerForToolRun | None = None) -> Dict[str, Any]:
+        return asyncio.run(self._arun(**payload))
+
+    async def _arun(self, email: str,
+                    run_manager: CallbackManagerForToolRun | None = None):
+        return await self._client.list_bookings(email)
+
 
 if __name__ == "__main__":
     # Import necessary classes
@@ -51,28 +78,49 @@ if __name__ == "__main__":
     create_booking_tool = CreateBookingTool(client=client)
 
     # Example payload matching BookingPayload schema
-    payload = {
-        "eventTypeId": 2874092,
-        "start": "2025-07-21T23:00:00.000Z",          # 16:00 PDT
-        "end":   "2025-07-21T23:30:00.000Z",          # 16:30 PDT
-        "title": "Intro call",
-        "timeZone": "America/Los_Angeles",
-        "language": "en",
-        "metadata": {},
-        "responses": {
-            "name":  "Alice Example",
-            "email": "alice@example.com",
-            "location": {"value": "userPhone", "optionValue": ""}
-        }
-    }
-    # Synchronous call
-    result = create_booking_tool._run(payload)
-    print(result)
+    # payload = {
+    #     "eventTypeId": 2874092,
+    #     "start": "2025-07-21T23:00:00.000Z",          # 16:00 PDT
+    #     "end":   "2025-07-21T23:30:00.000Z",          # 16:30 PDT
+    #     "title": "Intro call",
+    #     "timeZone": "America/Los_Angeles",
+    #     "language": "en",
+    #     "metadata": {},
+    #     "responses": {
+    #         "name":  "Alice Example",
+    #         "email": "alice@example.com",
+    #         "location": {"value": "userPhone", "optionValue": ""}
+    #     }
+    # }
+    # # Synchronous call
+    # result = create_booking_tool._run(payload)
+    # print(result)
 
-    # Asynchronous call
-    async def main():
-        result = await create_booking_tool._arun(payload)
-        print(result)
+    # # Asynchronous call
+    # async def main():
+    #     result = await create_booking_tool._arun(payload)
+    #     print(result)
 
     # To run the async example:
     # asyncio.run(main())
+
+
+    # Create an instance of the ListBookingTool
+    query_schedule_tool = ListBookingsTool(client=client)
+
+    # Example email to query schedules
+    # email = "grace2@example.com"
+    email = "alice@example.com"
+
+    # Synchronous call to list schedules
+    schedule_result = query_schedule_tool._run({"email": email})
+    print(schedule_result)
+
+    # Asynchronous call to list schedules
+    async def query_main():
+        schedule_result = await query_schedule_tool._arun(email=email)
+        print(schedule_result)
+
+    # To run the async example:
+    # asyncio.run(query_main())
+    

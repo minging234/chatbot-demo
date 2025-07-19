@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from fastapi import Depends, Header, Request
 
 from app.cal_client import CalComClient
-from app.tools import CreateBookingTool
+from app.tools import CreateBookingTool, ListBookingsTool
 from .prompt_builder import PromptBuilder
 from .response_parser import ResponseParser
 from .agents import AIAgent
@@ -39,7 +39,8 @@ def ai_agent(
 
     # Create an instance of the tool
     create_booking_tool = CreateBookingTool(client=client)
-    tools = [create_booking_tool]
+    list_booking_tool = ListBookingsTool(client=client)
+    tools = [create_booking_tool, list_booking_tool]
     return AIAgent(ChatOpenAI(model="gpt-3.5-turbo", temperature=0), builder, parser, tools=tools)
 
 def orchestrator(

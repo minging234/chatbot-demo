@@ -6,6 +6,7 @@ from typing import List, Sequence
 
 from langchain_openai import ChatOpenAI
 
+from app.tools import ListBookingsTool
 from app.utils import all_errors, extract_tool_name
 
 
@@ -171,7 +172,8 @@ if __name__ == "__main__":
 
     # Create an instance of the tool
     create_booking_tool = CreateBookingTool(client=client)
-    tools = [create_booking_tool]
+    list_booking_tool = ListBookingsTool(client=client)
+    tools = [create_booking_tool, list_booking_tool]
 
 
     async def main():
@@ -181,7 +183,8 @@ if __name__ == "__main__":
         agent = AIAgent(llm, builder, parser, tools=tools)
 
         # user_msg = "What is the weather in Paris and tell me a joke?"
-        user_msg = "Book a 30-minute call next Tuesday at 1 PM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
+        # user_msg = "Book a 30-minute call next Tuesday at 1 PM with alice@example.com. I am in PST time, tile is 'intro chat', location is default "
+        user_msg = "forgot all the previous context, List all the upcoming meeting with Alice, here email is alice@example.com"
         history = []
 
         reply = await agent.reply(user_msg, history)
