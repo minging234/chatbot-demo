@@ -63,7 +63,7 @@ def conversation_id_header(
 
 @asynccontextmanager
 async def lifespan(app):
-    redis = Redis.from_url("redis://localhost:6379/0")
+    redis = Redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
     app.state.redis = redis
     try:
         yield

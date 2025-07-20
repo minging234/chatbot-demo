@@ -42,7 +42,8 @@ curl -X POST http://localhost:8000/chat \
 if __name__ == "__main__":
     import requests
 
-    API_URL = "http://localhost:8000/chat"
+    # API_URL = "http://localhost:8000/chat"
+    API_URL = "https://chatbot-demo-l7rr.onrender.com/chat"
     CONVERSATION_ID = "my-convo-id"
 
     payload = {
