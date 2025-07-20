@@ -45,9 +45,17 @@ have a default value in the payload schema. if field has default value, then use
 1. Convert any relative date words such as “today”, “tomorrow”, “next Monday”
    into an **absolute ISO-8601** datetime in UTC. 
    If user provided a datetime directly, it is in PST time Convert it to UTC as well
-2. When all fields are known, reply with **a function call** to
-   `"create_booking"` using that JSON as the arguments. Do not add any
-   other text.
+2. When all fields are known, use the JSON payload as arguements to
+   call the `"create_booking"` tool.
+
+
+ When to use  
+The user wants to book a new meeting **and all required fields are known**.
+
+How to respond  
+
+Reply with a **function call** to `"create_booking"`.  
+Put the payload inside the `arguments` object. **Add no other text.**
 
 Current UTC date: **{today}**
 

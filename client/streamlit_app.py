@@ -45,6 +45,9 @@ if "conversation_id" not in st.session_state:
 
 cid = st.session_state.conversation_id          # convenience alias
 
+url = "https://chatbot-demo-l7rr.onrender.com"
+# url = "http://127.0.0.1:8000"
+
 
 if "messages" not in st.session_state:
     # Each message is a {"role": "user"|"assistant", "content": str}
@@ -56,7 +59,7 @@ if "messages" not in st.session_state:
 USER_EMAIL: str = st.sidebar.text_input("Your email", value="minging234@gmail.com", help="Enter your email address")
 st.sidebar.header("Server configuration")
 API_BASE_URL: str = st.sidebar.text_input(
-    "API Base URL", value="https://chatbot-demo-l7rr.onrender.com", help="Where your FastAPI/LangChain backend lives"
+    "API Base URL", value=url, help="Where your FastAPI/LangChain backend lives"
 )
 CONVERSATION_NAME: str = st.sidebar.text_input(
     "Conversation name", value=cid, help="A name for this chat session"
