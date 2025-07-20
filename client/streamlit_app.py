@@ -41,7 +41,7 @@ import random
 # ──────────────────────────────────────────────────────────────
 if "conversation_id" not in st.session_state:
     # shorter than uuid4, but still unique enough for a demo
-    st.session_state.conversation_id = f"web-ui-{uuid.uuid4().hex[:8]}"
+    st.session_state.conversation_id = f"web-ui-{random.randint(1, 1000)}"
 
 cid = st.session_state.conversation_id          # convenience alias
 
