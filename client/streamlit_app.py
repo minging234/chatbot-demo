@@ -36,6 +36,16 @@ import random
 # Session‑state helpers
 ###############################################################################
 
+# ──────────────────────────────────────────────────────────────
+# 1  Create the ID once per browser session
+# ──────────────────────────────────────────────────────────────
+if "conversation_id" not in st.session_state:
+    # shorter than uuid4, but still unique enough for a demo
+    st.session_state.conversation_id = f"web-ui-{uuid.uuid4().hex[:8]}"
+
+cid = st.session_state.conversation_id          # convenience alias
+
+
 if "messages" not in st.session_state:
     # Each message is a {"role": "user"|"assistant", "content": str}
     st.session_state.messages: List[Dict[str, str]] = []
@@ -49,7 +59,7 @@ API_BASE_URL: str = st.sidebar.text_input(
     "API Base URL", value="https://chatbot-demo-l7rr.onrender.com", help="Where your FastAPI/LangChain backend lives"
 )
 CONVERSATION_NAME: str = st.sidebar.text_input(
-    "Conversation name", value=f"web-ui-{random.randint(0,1000)}", help="A name for this chat session"
+    "Conversation name", value=cid, help="A name for this chat session"
 )
 # API_KEY: str = st.sidebar.text_input("Bearer token (optional)", type="password")
 
