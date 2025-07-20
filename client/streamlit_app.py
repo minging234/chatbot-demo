@@ -30,6 +30,7 @@ from typing import Any, Dict, List
 import pytz  # type: ignore
 import requests
 import streamlit as st
+import random
 
 ###############################################################################
 # Session‑state helpers
@@ -48,7 +49,7 @@ API_BASE_URL: str = st.sidebar.text_input(
     "API Base URL", value="https://chatbot-demo-l7rr.onrender.com", help="Where your FastAPI/LangChain backend lives"
 )
 CONVERSATION_NAME: str = st.sidebar.text_input(
-    "Conversation name", value="web-ui", help="A name for this chat session"
+    "Conversation name", value=f"web-ui-{random.randint(0,1000)}", help="A name for this chat session"
 )
 # API_KEY: str = st.sidebar.text_input("Bearer token (optional)", type="password")
 
