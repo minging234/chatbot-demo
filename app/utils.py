@@ -9,8 +9,10 @@ from zoneinfo import ZoneInfo
 from datetime import datetime
 import re, json
 import tiktoken
-from typing import List
 from langchain_core.messages import BaseMessage
+from typing import List
+
+import tiktoken
 
 
 
@@ -76,30 +78,56 @@ ENC = tiktoken.encoding_for_model("gpt-3.5-turbo")   # or your model
 def num_tokens(msg: BaseMessage) -> int:
     return len(ENC.encode(msg.content))
 
+ENC = tiktoken.encoding_for_model("gpt-3.5-turbo")   # or your target model
+
+
+def num_tokens(msg: BaseMessage) -> int:
+    """Rough token estimate for one message’s content."""
+    return len(ENC.encode(msg.content or ""))
+
+
 def prune_history(
     messages: List[BaseMessage],
-    max_tokens: int = 12_000,        # leave ~4k headroom for the reply/tools
+    max_tokens: int = 12_000,       # leave ~4k-5k for the model’s reply/tools
 ) -> List[BaseMessage]:
     """
     Keep the system prompt + *most recent* messages that fit into `max_tokens`.
-    Tool / function results are truncated to reduce bulk.
+
+    • The very first message (system prompt) is always preserved.
+    • The **newest** ToolMessage (if any) is preserved in full.
+    • Older ToolMessages >200 chars are truncated to “[tool-result truncated]”.
     """
-    # 1️⃣  Always keep the very first message (system)
+    if not messages:
+        return messages
+
+    # 1️⃣  Always keep the system prompt
     pruned: List[BaseMessage] = [messages[0]]
     running_total = num_tokens(messages[0])
 
-    # 2️⃣  Walk the list from the *end* (newest) backwards
-    for msg in reversed(messages[1:]):
-        # --- compress huge tool messages ----------------------------------
-        if hasattr(msg, "tool_call_id") and len(msg.content) > 200:
+    # 2️⃣  Walk the conversation backwards (newest → oldest)
+    for idx_from_end, msg in enumerate(reversed(messages[1:]), start=1):
+        is_last_tool = (
+            idx_from_end == 1                     # newest message
+            and hasattr(msg, "tool_call_id")      # and it's a tool result
+        )
+
+        # --- compress oversized *older* tool messages --------------------
+        if (
+            hasattr(msg, "tool_call_id")
+            and len(msg.content) > 200
+            and not is_last_tool                 # keep newest tool intact
+        ):
             msg = msg.__class__(
                 tool_call_id=getattr(msg, "tool_call_id"),
                 content="[tool-result truncated]",
             )
+
         t = num_tokens(msg)
         if running_total + t > max_tokens:
             break
-        pruned.insert(1, msg)        # insert after system
+
+        # insert just after the system prompt (keeps chronological order)
+        pruned.insert(1, msg)
         running_total += t
 
     return pruned

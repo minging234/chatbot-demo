@@ -265,29 +265,29 @@ if __name__ == "__main__":
     # print(cancel_result)
 
 
-    # -----------------------------------
-    # Example usage of RescheduleBookingTool
-    reschedule_tool = RescheduleBookingTool(client=client)
+    # # -----------------------------------
+    # # Example usage of RescheduleBookingTool
+    # reschedule_tool = RescheduleBookingTool(client=client)
 
-    # Example payload for rescheduling
-    reschedule_payload = {
-        "booking_uid": "dakwUd6WetesebP752dNZR",
-        "new_start": "2025-07-22T16:00:00.000Z",
-        "new_end": "2025-07-22T16:30:00.000Z",
-        "timeZone": "America/Los_Angeles",
-        "eventTypeId": 2874092,
-        "title": "Rescheduled Intro Call",
-        "responses": {
-            "name": "Alice Example",
-            "email": "alice@example.com",
-            "location": {"value": "userPhone", "optionValue": ""}
-        },
-        "language": "en",
-        "metadata": {},
-        "description": "Rescheduling meeting",
-        "attendees": []
-    }
+    # # Example payload for rescheduling
+    # reschedule_payload = {
+    #     "booking_uid": "dakwUd6WetesebP752dNZR",
+    #     "new_start": "2025-07-22T16:00:00.000Z",
+    #     "new_end": "2025-07-22T16:30:00.000Z",
+    #     "timeZone": "America/Los_Angeles",
+    #     "eventTypeId": 2874092,
+    #     "title": "Rescheduled Intro Call",
+    #     "responses": {
+    #         "name": "Alice Example",
+    #         "email": "alice@example.com",
+    #         "location": {"value": "userPhone", "optionValue": ""}
+    #     },
+    #     "language": "en",
+    #     "metadata": {},
+    #     "description": "Rescheduling meeting",
+    #     "attendees": []
+    # }
 
-    # Synchronous call to reschedule a booking
-    reschedule_result = reschedule_tool._run(reschedule_payload)
-    print(reschedule_result)
+    # # Synchronous call to reschedule a booking
+    # reschedule_result = reschedule_tool._run(reschedule_payload)
+    # print(reschedule_result)
