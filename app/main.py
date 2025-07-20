@@ -64,7 +64,7 @@ if __name__ == "__main__":
         "conversation-id": CONVERSATION_ID,
     }
 
-    response = requests.post(API_URL, json=payload, headers=headers, timeout=10)
+    response = requests.post(API_URL, json=payload, headers=headers, timeout=(3, 60))
     print(payload["message"])
     print("Status code:", response.status_code)
     print("Response JSON:", response.json())
